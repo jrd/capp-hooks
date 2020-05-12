@@ -1,0 +1,84 @@
+#!/bin/bash
+usage() {
+    echo "backup_undeploy app_name env version docker_compose_file target_dir"
+    echo "   app_name: application name (Example: itsim)"
+    echo "   env: environment (Example: prod)"
+    echo "   version: version number"
+    echo "   docker_compose_file: path to docker compose file (application context)"
+    echo "   target_dir: path to target dir (/etc/compose/<app_name>/<env>)"
+    echo ""
+    echo "Example: ./backup_undeploy my-app prod 1 docker-compose.yml /etc/compose/my-app/prod"
+}
+
+yaml2json() {
+    python3 -c "from yaml import full_load; from json import dumps; print(dumps(full_load(open('$1').read()), indent=2))"
+}
+
+jsonarr_to_spacelist() {
+    sed -r 's/^\["//; s/","/ /g; s/"\]$//;'
+}
+
+contains() {
+    local list="$1"
+    local elem="$2"
+    for i in $list; do
+        if [ "$i" == "$elem" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+APP_NAME="$1"
+ENV="$2"
+VERSION="$3"
+DOCKER_FILE="$4"
+TARGET_DIR="$5"
+
+REPO_NAME_PREFIX="$APP_NAME-$ENV"
+VOLUME_ROOT=/var/lib/docker/volumes
+BORGMATIC_ROOT=/etc/borgmatic.d
+
+if [ -z "$APP_NAME" ] || [ -z "$DOCKER_FILE" ] || [ -z "$ENV" ]; then
+    usage
+    exit 1
+fi
+if [ ! -e "$DOCKER_FILE" ]; then
+    usage
+    exit 2
+fi
+
+# yaml to json
+yaml_json=$(yaml2json "$DOCKER_FILE")
+
+# Extract root keys like version, services, ...
+arr_keys="$(echo "$yaml_json" | jq -c keys | jsonarr_to_spacelist)"
+
+# Check if volumes and x-backups exist
+if ! contains "$arr_keys" "volumes" || ! contains "$arr_keys" "x-backups"; then
+    # No volume to backup
+    exit 0
+fi
+
+# Extract all volumes
+arr_volumes="$(echo "$yaml_json" | jq -c '.volumes | keys' | jsonarr_to_spacelist)"
+# Extract all backups (that have a retention_days defined)
+arr_backups="$(echo "$yaml_json" | jq -c '.["x-backups"] | with_entries(select(.value.retention_days)) | keys' | jsonarr_to_spacelist)"
+
+# Build repo names & volume paths
+arr_volume_paths=""
+for vol in $arr_backups; do
+    if contains "$arr_volumes" "$vol"; then
+        repo_name="${REPO_NAME_PREFIX}_${vol}"
+        arr_repos="$arr_repos $repo_name"
+        arr_volume_paths="$arr_volume_paths $VOLUME_ROOT/$repo_name"
+    fi
+done
+
+# Remove all borgmatic config files
+mkdir -p "$BORGMATIC_ROOT"
+for volume_path in $arr_volume_paths; do
+    repo_name="$(basename $volume_path)"
+    config_file_path="$BORGMATIC_ROOT/$repo_name.yaml"
+    [ -e $config_file_path ] && rm $config_file_path
+done
