@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser
+from json import (
+    dump,
+    load,
+)
+from pathlib import Path
+from re import sub
+from typing import (
+    Dict,
+    List,
+)
+from uuid import uuid4
+from locking import FileLock
+
+
+class Monitoring:
+    def __init__(self, app: str, environment: str) -> None:
+        self.app = app
+        self.environment = environment
+        self.dashboards_path = Path('/grafana/dashboards')
+        templates_path = Path('/conf/templates')
+        self.service_dashboard_path = templates_path / 'service_dashboard.json'
+        self.environment_panel_path = templates_path / 'environment_panel.json'
+        self.graph_container_health_path = templates_path / 'graph_container_health.json'
+        self.graph_container_states_path = templates_path / 'graph_container_states.json'
+        self.graph_environment_memory_usage_path = templates_path / 'graph_environment_memory_usage.json'
+        self.graph_container_memory_usage_path = templates_path / 'graph_container_memory_usage.json'
+        self.graph_container_cpu_usage_path = templates_path / 'graph_container_cpu_usage.json'
+        self.graph_alerts_path = templates_path / 'graph_alerts.json'
+        self.capp_app_label = 'capp_app'
+        self.capp_environment_label = 'capp_environment'
+        self.all_env = 'all'
+        self.environments = [self.all_env, 'prod', 'demo', 'staging', 'integ', 'dev']
+        self.id_seq = self.get_next_id()
+
+    def is_blacklisted(self) -> bool:
+        with open(Path(__file__).resolve().parent / 'blacklist') as f:
+            blacklist = f.readlines()
+            return self.app in blacklist
+
+    def get_next_id(self) -> int:
+        i = 1
+        while True:
+            yield i
+            i += 1
+
+    def get_env_name(self, env: str) -> str:
+        return f'{env.capitalize()} environment{"s" if env == self.all_env else ""}'
+
+    def get_specific_query_expression(self, env: str) -> str:
+        return '' if env == self.all_env else f', container_label_{self.capp_environment_label}=\"{env}\"'
+
+    def deploy_service(self) -> None:
+        grafana_service_path = self.dashboards_path / f'{self.app}_services.json'
+        if grafana_service_path.exists():
+            with grafana_service_path.open('r') as f:
+                service_dashboard = load(f)
+        else:
+            service_dashboard = load(self.service_dashboard_path.open())
+            service_dashboard['title'] = f'{self.app.capitalize()} services'
+            service_dashboard['id'] = str(uuid4())
+            service_dashboard['uid'] = str(uuid4())
+        panels = service_dashboard['panels']
+        panels = self._clean_panel_list(panels)
+        panels_by_env = {
+            sub(r'.* for (.*) environments?', r'\1', panel['title'].lower()): panel
+            for panel in panels
+        }
+        if self.all_env not in panels_by_env:
+            panels_by_env[self.all_env] = self.get_environment_panel_json(self.all_env)
+        self.id_seq = self.get_next_id()  # reset internal id sequence
+        panels_by_env[self.environment] = self.get_environment_panel_json(self.environment)
+        panels = [panels_by_env[env] for env in self.environments if env in panels_by_env]
+        service_dashboard['panels'] = panels
+        with grafana_service_path.open('w') as f:
+            dump(service_dashboard, f, sort_keys=True, indent=2)
+
+    def get_environment_panel_json(self, env: str) -> Dict:
+        """ Get the json representation of a panel with graph embedded for an environment or for all environments.
+        Attributes:
+            env: the name of the environment.
+        Rerturns:
+            dict: the environment panel that can be included in the service panel
+        """
+        with self.environment_panel_path.open() as f:
+            environment_panel = load(f)
+        env_index = self.environments.index(env)
+        environment_panel['id'] = (env_index + 1) * 1000
+        environment_panel['gridPos']['y'] = env_index
+        environment_panel['title'] = f'{self.app.capitalize()} services for {self.get_env_name(env)}'
+        container_health = self.get_container_health_graph(env, 0)
+        container_states = self.get_container_states_graph(env, 1)
+        environment_memory = self.get_environment_memory_usage_graph(env, 2, 0)
+        container_memory = self.get_container_memory_usage_graph(env, 2, 4)
+        container_cpu = self.get_container_cpu_usage_graph(env, 3)
+        alerts = self.get_alerts_graph(env, 4)
+        environment_panel['panels'] = [container_health, container_states, environment_memory, container_memory, container_cpu, alerts]
+        return environment_panel
+
+    def _set_graph_id_position_title(self, env: str, graph: Dict, graph_name: str, panel_y_pos: int = None, panel_x_pos: int = None) -> Dict:
+        graph['id'] = (self.environments.index(env) + 1) * 1000 + next(self.id_seq)
+        if panel_y_pos is not None:
+            graph['gridPos']['y'] = panel_y_pos
+        if panel_x_pos is not None:
+            graph['gridPos']['x'] = panel_x_pos
+        graph['title'] = f'{self.app.capitalize()} {graph_name} - {self.get_env_name(env)}'
+        return graph
+
+    def _clean_panel_list(self, panels: List) -> List:
+        """Cleans a panels list: drop duplicates (title based, case insensitive)"""
+        panels_tiles = []
+        cleaned_panels = []
+        for panel in panels:
+            if panel['title'].lower() not in panels_tiles:
+                panels_tiles.append(panel['title'].lower())
+                cleaned_panels.append(panel)
+        return cleaned_panels
+
+    def get_container_health_graph(self, env: str, panel_y_pos: int = 0) -> Dict:
+        with self.graph_container_health_path.open() as f:
+            graph = load(f)
+        graph_name = 'Container health (1: unhealthy, 2: healthy)'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        expression_environment_specific = self.get_specific_query_expression(env)
+        expression_unhealthy = f'max by (name, container_label_{self.capp_environment_label}) (container_health_enum{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}, container_health_enum=\"unhealthy\"}})'
+        expression_healthy = f'max by (name, container_label_{self.capp_environment_label}) (container_health_enum{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}, container_health_enum=\"healthy\"}}) * 2'
+        expression = f'({expression_unhealthy}+ {expression_healthy}) != 0'
+        graph['targets'] = [
+            {
+                'expr': expression,
+                'legendFormat': '{{ name }}',
+                'refId': 'A'
+            }
+        ]
+        return graph
+
+    def get_container_states_graph(self, env: str, panel_y_pos: int = 1) -> Dict:
+        with self.graph_container_states_path.open() as f:
+            graph = load(f)
+        graph_name = 'Container states (1: stopping, 2: exited, 3: crashed, 4: restarting, 5: created, 6: paused, 7: running)'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        expression_environment_specific = self.get_specific_query_expression(env)
+
+        def get_state_expression(state):
+            return (
+                f'max by (name, container_label_{self.capp_environment_label})'
+                f' (container_status_enum{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}, container_status_enum=\"{state}\"}})'
+            )
+        state_1 = get_state_expression('stopping')
+        state_2 = get_state_expression('exited')
+        state_3 = get_state_expression('exited-crashed')
+        state_4 = get_state_expression('restarting')
+        state_5 = get_state_expression('created')
+        state_6 = get_state_expression('paused')
+        state_7 = get_state_expression('running')
+        expression = f'({state_1} * 1 + {state_2} * 2 + {state_3} * 3 + {state_4} * 4 + {state_5} * 5 + {state_6} * 6 + {state_7} * 7)'
+        graph['targets'] = [
+            {
+                'expr': expression,
+                'legendFormat': '{{ name }}',
+                'refId': 'A'
+            }
+        ]
+        return graph
+
+    def get_environment_memory_usage_graph(self, env: str, panel_y_pos: int = 2, panel_x_pos: int = 0) -> Dict:
+        with self.graph_environment_memory_usage_path.open() as f:
+            graph = load(f)
+        graph_name = 'Memory Usage'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        expression_environment_specific = self.get_specific_query_expression(env)
+        expression = f'sum(container_memory_usage_bytes{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}})'
+        graph['targets'] = [
+            {
+                'expr': expression,
+                'format': 'time_series',
+                'interval': '',
+                'intervalFactor': 10,
+                'legendFormat': '{{ name }}',
+                'metric': 'container_memory_usage_bytes',
+                'refId': 'A',
+                'step': 10
+            }
+        ]
+        return graph
+
+    def get_container_memory_usage_graph(self, env: str, panel_y_pos: int = 2, panel_x_pos: int = 0) -> Dict:
+        with self.graph_container_memory_usage_path.open() as f:
+            graph = load(f)
+        graph_name = 'Container Memory Usage'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        expression_environment_specific = self.get_specific_query_expression(env)
+        expression = f'sum by (name) (container_memory_usage_bytes{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}})'
+        graph['targets'] = [
+            {
+                'expr': expression,
+                'format': 'time_series',
+                'interval': '10s',
+                'intervalFactor': 1,
+                'legendFormat': '{{ name }}',
+                'refId': 'A',
+                'step': 10
+            }
+        ]
+        return graph
+
+    def get_container_cpu_usage_graph(self, env: str, panel_y_pos: int = 3) -> Dict:
+        with self.graph_container_cpu_usage_path.open() as f:
+            graph = load(f)
+        graph_name = 'Container CPU Usage'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        expression_environment_specific = self.get_specific_query_expression(env)
+        expression_1 = f'sum by (name) (rate(container_cpu_user_seconds_total{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]) * 100 / scalar(count(node_cpu{{mode=\"user\"}})))'
+        expression_2 = f'sum by (name) (rate(container_cpu_user_seconds_total{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]) * 100 / scalar(count(node_cpu_seconds_total{{mode=\"user\"}})))'
+        graph['targets'] = [
+            {
+                'expr': expression_1,
+                'format': 'time_series',
+                'hide': True,
+                'intervalFactor': 10,
+                'legendFormat': '{{ name }}',
+                'refId': 'A',
+                'step': 10
+            },
+            {
+                'expr': expression_2,
+                'format': 'time_series',
+                'intervalFactor': 10,
+                'legendFormat': '{{ name }}',
+                'refId': 'B'
+            }
+        ]
+        return graph
+
+    def get_alerts_graph(self, env: str, panel_y_pos: int = 4) -> Dict:
+        with self.graph_alerts_path.open() as f:
+            graph = load(f)
+        graph_name = 'Alerts'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        graph['targets'] = [
+            {
+                "expr": "sum(ALERTS{alertstate=\"firing\"}) by (alertname)",
+                "format": "time_series",
+                "interval": "30s",
+                "intervalFactor": 1,
+                "legendFormat": "{{ alertname }}",
+                "metric": "container_memory_usage_bytes",
+                "refId": "A",
+                "step": 10
+            }
+        ]
+        return graph
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("app")
+    parser.add_argument("environment")
+    parser.add_argument("remain", nargs='*')
+    args = parser.parse_args()
+    monitoring = Monitoring(args.app, args.environment)
+    if not monitoring.is_blacklisted() and monitoring.dashboards_path.exists():
+        with FileLock(monitoring.dashboards_path / f'{args.app}_services.json.lock', timeout=20):
+            monitoring.deploy_service()

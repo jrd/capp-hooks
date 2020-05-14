@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser
+from json import (
+    dump,
+    load,
+)
+from pathlib import Path
+from locking import FileLock
+
+
+class Monitoring:
+    def __init__(self, app: str, environment: str) -> None:
+        self.app = app
+        self.environment = environment
+        self.dashboards_path = Path('/grafana/dashboards')
+        self.all_env = 'all'
+        self.environments = [self.all_env, 'prod', 'demo', 'staging', 'integ', 'dev']
+
+    def is_blacklisted(self) -> bool:
+        with open(Path(__file__).resolve().parent / 'blacklist') as f:
+            blacklist = f.readlines()
+            return self.app in blacklist
+
+    def undeploy_service(self) -> None:
+        grafana_service_path = self.dashboards_path / f'{self.app}_services.json'
+        if grafana_service_path.exists():
+            with grafana_service_path.open('r') as f:
+                service_dashboard = load(f)
+            panels = service_dashboard['panels']
+            if len(panels) > 2:
+                panels = [panel for panel in panels if f'for {self.environment.capitalize()} environment' not in panel['title']]
+                service_dashboard['panels'] = panels
+                with grafana_service_path.open('w') as f:
+                    dump(service_dashboard, f, sort_keys=True, indent=2)
+            else:
+                grafana_service_path.unlink()
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("app")
+    parser.add_argument("environment")
+    parser.add_argument("remain", nargs='*')
+    args = parser.parse_args()
+    monitoring = Monitoring(args.app, args.environment)
+    if not monitoring.is_blacklisted() and monitoring.dashboards_path.exists():
+        with FileLock(monitoring.dashboards_path / f'{args.app}_services.json.lock', timeout=20):
+            monitoring.undeploy_service()

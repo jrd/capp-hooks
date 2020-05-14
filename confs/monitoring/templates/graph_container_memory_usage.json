@@ -1,0 +1,100 @@
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "Prometheus",
+  "decimals": 2,
+  "editable": true,
+  "error": false,
+  "fill": 1,
+  "fillGradient": 0,
+  "grid": {},
+  "gridPos": {
+    "h": 7,
+    "w": 20,
+    "x": 4,
+    "y": 20
+  },
+  "hiddenSeries": false,
+  "id": 117,
+  "legend": {
+    "alignAsTable": true,
+    "avg": true, 
+    "current": false,
+    "max": true,
+    "min": true,
+    "rightSide": true,
+    "show": true,
+    "total": false,
+    "values": true
+  },
+  "lines": true,
+  "linewidth": 2,
+  "links": [],
+  "nullPointMode": "connected",
+  "options": {
+    "dataLinks": []
+  },  
+  "percentage": false,
+  "pointradius": 5,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "expr": "sum by (name) (container_memory_usage_bytes{container_label_capp_app=\"APP\",container_label_capp_environment=\"dev\"})",
+      "format": "time_series",
+      "interval": "",
+      "intervalFactor": 10,
+      "legendFormat": "{{ name }}",
+      "metric": "container_memory_usage_bytes",
+      "refId": "A",
+      "step": 10
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "APP Container Memory Usage - Dev environment",
+  "tooltip": {
+    "msResolution": true,
+    "shared": true,
+    "sort": 2,
+    "value_type": "cumulative"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "bytes",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": false
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  }
+}

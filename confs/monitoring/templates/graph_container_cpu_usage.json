@@ -1,0 +1,107 @@
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "Prometheus",
+  "decimals": 2,
+  "editable": true,
+  "error": false,
+  "fill": 1,
+  "fillGradient": 0,
+  "grid": {},
+  "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 27
+  },
+  "hiddenSeries": false,
+  "id": 118,
+  "legend": {
+    "alignAsTable": true,
+    "avg": true,
+    "current": false,
+    "max": true,
+    "min": true,
+    "rightSide": true,
+    "show": true,
+    "total": false,
+    "values": true
+  },
+  "lines": true,
+  "linewidth": 2,
+  "links": [],
+  "nullPointMode": "connected",
+  "options": {
+    "dataLinks": []
+  },
+  "percentage": false,
+  "pointradius": 5,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "expr": "sum by (name) (rate(container_cpu_user_seconds_total{container_label_capp_app=\"APP\",container_label_capp_environment=\"dev\"}[1m]) * 100  / scalar(count(node_cpu{mode=\"user\"})))",
+      "format": "time_series",
+      "hide": true,
+      "intervalFactor": 10,
+      "legendFormat": "{{ name }}",
+      "refId": "A",
+      "step": 10
+    },
+    {
+      "expr": "sum by (name) (rate(container_cpu_user_seconds_total{container_label_capp_app=\"APP\",container_label_capp_environment=\"dev\"}[1m]) * 100  / scalar(count(node_cpu_seconds_total{mode=\"user\"})))",
+      "format": "time_series",
+      "intervalFactor": 10,
+      "legendFormat": "{{ name }}",
+      "refId": "B"
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "APP Container CPU Usage - Dev environment",
+  "tooltip": {
+    "msResolution": true,
+    "shared": true,
+    "sort": 2,
+    "value_type": "cumulative"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "percent",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  }
+}
+
