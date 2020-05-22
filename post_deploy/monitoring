@@ -1,0 +1,10 @@
+#!/bin/sh
+APP="$1"
+ENV="$2"
+GRAFANA_VOLUME=monitoring-prod_grafana_conf
+CONF="$(readlink -f "$(dirname "$0")/../confs/monitoring")"
+docker run --rm -i \
+  -v $GRAFANA_VOLUME:/grafana:rw \
+  -v $CONF:/conf:ro \
+  python:3.7 \
+  python /conf/post_deploy "$APP" "$ENV"

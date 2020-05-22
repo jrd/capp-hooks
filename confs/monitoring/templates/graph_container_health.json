@@ -1,0 +1,90 @@
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "Prometheus",
+  "fill": 1,
+  "fillGradient": 0,
+  "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 0
+  },
+  "hiddenSeries": false,
+  "id": 0,
+  "legend": {
+    "avg": false,
+    "current": false,
+    "max": false,
+    "min": false,
+    "rightSide": true,
+    "show": true,
+    "total": false,
+    "values": false
+  },
+  "lines": true,
+  "linewidth": 1,
+  "nullPointMode": "null as zero",
+  "options": {
+    "dataLinks": []
+  },
+  "percentage": false,
+  "pointradius": 2,
+  "points": true,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "expr": "(max by (name, container_label_capp_environment) (container_health_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_health_enum=\"unhealthy\"}) + max by (name, container_label_capp_environment) (container_health_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_health_enum=\"healthy\"}) * 2)  != 0",
+      "legendFormat": "{{ name }}",
+      "refId": "A"
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "APP Container health (1: unhealthy, 2: healthy) - Dev environment",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "decimals": 0,
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": "2",
+      "min": "0",
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": false
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  }
+}
+
