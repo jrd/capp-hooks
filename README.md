@@ -34,3 +34,23 @@ x-backups:
     pgdata:
         retention_days: 3
 ```
+
+
+Monitoring
+----------
+
+The monitoring hooks allows an automatic configuration of Qeto's monitoring dashboards.
+
+Three hooks are used :
+* `pre_deploy/monitoring` for labelling the containers (the labels are later needed by the monitoring solution),
+* `post_deploy/monitoring` for setting up the monitoring dashboards,
+* `post_undeploy/monitoring` for tearing down the monitoring dashboards.
+
+These hooks need the configuraiton elements located in `confs/monitoring`. This directory contains :
+* `templates` directory: json templates for the dahboards, that will be adapted to the service and environment and injected in Grafana, used by Qeto's monitoring solution,
+* `blacklist`: a blacklist of services that do not need monitoring panels,
+* `locking.py`: a helper module that provides functions for locking files and avoid race conditions,
+* `post_deploy`: a python script executed for setting up the dashboards,
+* `post_undeploy`: a python script used for tearing down the dashboards.
+
+These hooks rely on the fact that Grafana's dashboard configuration is located in a docker volume. The monitoring hook will read and write configurations on this volume in order to update Grafana's dashboards.
