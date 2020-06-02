@@ -22,8 +22,8 @@ class Monitoring:
         templates_path = Path('/conf/templates')
         self.service_dashboard_path = templates_path / 'service_dashboard.json'
         self.environment_panel_path = templates_path / 'environment_panel.json'
-        self.graph_container_health_path = templates_path / 'graph_container_health.json'
         self.graph_container_states_path = templates_path / 'graph_container_states.json'
+        self.graph_container_health_path = templates_path / 'graph_container_health.json'
         self.graph_environment_memory_usage_path = templates_path / 'graph_environment_memory_usage.json'
         self.graph_container_memory_usage_path = templates_path / 'graph_container_memory_usage.json'
         self.graph_container_cpu_usage_path = templates_path / 'graph_container_cpu_usage.json'
@@ -89,13 +89,13 @@ class Monitoring:
         environment_panel['id'] = (env_index + 1) * 1000
         environment_panel['gridPos']['y'] = env_index
         environment_panel['title'] = f'{self.app.capitalize()} services for {self.get_env_name(env)}'
-        container_health = self.get_container_health_graph(env, 0)
-        container_states = self.get_container_states_graph(env, 1)
+        container_states = self.get_container_states_graph(env, 0)
+        container_health = self.get_container_health_graph(env, 1)
         environment_memory = self.get_environment_memory_usage_graph(env, 2, 0)
         container_memory = self.get_container_memory_usage_graph(env, 2, 4)
         container_cpu = self.get_container_cpu_usage_graph(env, 3)
         alerts = self.get_alerts_graph(env, 4)
-        environment_panel['panels'] = [container_health, container_states, environment_memory, container_memory, container_cpu, alerts]
+        environment_panel['panels'] = [container_states, container_health, environment_memory, container_memory, container_cpu, alerts]
         return environment_panel
 
     def _set_graph_id_position_title(self, env: str, graph: Dict, graph_name: str, panel_y_pos: int = None, panel_x_pos: int = None) -> Dict:
