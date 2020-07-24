@@ -6,13 +6,13 @@ from json import load, dump
 from typing import List, Dict
 
 def get_links(compose_file: Path) -> Dict:
-    def get_env(service: Dict) -> Dict:
+    def get_docker_host(service: Dict) -> Dict:
         env_vars = service.get('environment', {})
         if isinstance(env_vars, list):
-            env_vars = dict(
-                [env_var.split('=', 1) for env_var in env_vars if '=' in env_var] +
-                [(env_var, '') for env_var in env_vars if '=' not in env_var]
-            )
+            env_vars = dict([
+                env_var.split('=', 1) if '=' in env_var else (env_var, '')
+                for env_var in env_vars
+            ])
 
         return env_vars.get('DOCKER_HOST', {})
 
