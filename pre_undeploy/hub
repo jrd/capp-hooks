@@ -2,7 +2,7 @@
 APP="$1"
 ENV="$2"
 DOCKER_CONPOSE_FILE="$3"
-HUB_VOLUME=hub-volume # TO CHANGE
+HUB_VOLUME=hub_data
 CONF="$(readlink -f "$(dirname "$0")/../confs/hub")"
 docker run --rm -i \
   -v $HUB_VOLUME:/hub:rw \
