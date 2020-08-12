@@ -1,11 +1,11 @@
 #!/bin/sh
 APP="$1"
 ENV="$2"
-DOCKER_CONPOSE_FILE="$3"
+DOCKER_COMPOSE_FILE="$3"
 HUB_VOLUME=hub_data
 CONF="$(readlink -f "$(dirname "$0")/../confs/hub")"
 docker run --rm -i \
   -v $HUB_VOLUME:/hub:rw \
   -v $CONF:/conf:ro \
-  python:3.7 \
-  python /conf/pre_undeploy "$APP" "$ENV" "$DOCKER_CONPOSE_FILE" /hub/data/apps.json
+  python:3.8 \
+  python /conf/pre_undeploy "$APP" "$ENV" "$DOCKER_COMPOSE_FILE" /hub/data/apps.json

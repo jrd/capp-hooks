@@ -6,22 +6,22 @@ from json import load, dump
 from typing import List, Dict
 
 def get_links(compose_file: Path) -> Dict:
-    def get_docker_host(service: Dict) -> Dict:
+    def get_virtual_host(service: Dict) -> Dict:
         env_vars = service.get('environment', {})
         if isinstance(env_vars, list):
             env_vars = dict([
                 env_var.split('=', 1) if '=' in env_var else (env_var, '')
                 for env_var in env_vars
             ])
-
-        return env_vars.get('DOCKER_HOST', {})
+        vhost_str = env_vars.get('VIRTUAL_HOST', {})  # Can be a string of comma-separated vhosts
+        return vhost_str.split(',')[0]
 
     with open(compose_file) as f:
         dc = full_load(f)
         return {
-            svc_name: get_env(svc_def)
+            svc_name: virtual_host
             for (svc_name, svc_def) in dc.get('services', {}).items()
-            if svc_name and get_env(svc_def)
+            if svc_name and (virtual_host := get_virtual_host(svc_def))
         }
 
 def write_json(app: str, environment: str, links: Dict, target_file: str) -> None:
@@ -29,7 +29,7 @@ def write_json(app: str, environment: str, links: Dict, target_file: str) -> Non
         data = load(f)
         for service, link in links.items():
             svc_name = f'{app}-{service}'
-            if data.get(svc_name):
+            if svc_name in data:
                 data[svc_name].pop(environment)
                 if len(data[svc_name]) == 0:
                     data.pop(svc_name)
