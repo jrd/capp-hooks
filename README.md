@@ -46,7 +46,7 @@ Three hooks are used :
 * `post_deploy/monitoring` for setting up the monitoring dashboards,
 * `post_undeploy/monitoring` for tearing down the monitoring dashboards.
 
-These hooks need the configuraiton elements located in `confs/monitoring`. This directory contains :
+These hooks need the configuration elements located in `confs/monitoring`. This directory contains :
 * `templates` directory: json templates for the dahboards, that will be adapted to the service and environment and injected in Grafana, used by Qeto's monitoring solution,
 * `blacklist`: a blacklist of services that do not need monitoring panels,
 * `locking.py`: a helper module that provides functions for locking files and avoid race conditions,
@@ -54,3 +54,16 @@ These hooks need the configuraiton elements located in `confs/monitoring`. This 
 * `post_undeploy`: a python script used for tearing down the dashboards.
 
 These hooks rely on the fact that Grafana's dashboard configuration is located in a docker volume. The monitoring hook will read and write configurations on this volume in order to update Grafana's dashboards.
+
+Hub
+---
+
+The hub hooks are maintaining a json file up to date with currently deployed application and their frontend urls.
+
+Two hooks are used:
+* `post_deploy/hub` for adding the app/env and its url to the json,
+* `pre_undeploy/hub` for removing the app/env from the json.
+
+The json file is kept in a `hub_data` docker volume at `/data/apps.json` location.
+
+The hub application should be deployed to read that volume/file.
