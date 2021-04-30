@@ -1,10 +1,10 @@
 #!/bin/sh
 APP="$1"
 ENV="$2"
-GRAFANA_VOLUME=monitoring-prod_grafana_conf
 CONF="$(readlink -f "$(dirname "$0")/../confs/monitoring")"
-docker run --rm -i \
-  -v $GRAFANA_VOLUME:/grafana:rw \
-  -v $CONF:/conf:ro \
-  python:3.7 \
-  python /conf/post_undeploy "$APP" "$ENV"
+GRAFANA_VOLUME=monitoring-prod_grafana_conf
+GRAFANA_DATA=$(docker inspect $GRAFANA_VOLUME 2>/dev/null|jq -r '.[0].Mountpoint')
+if [ "$GRAFANA_DATA" = "null" ]; then
+  exit 0
+fi
+python3 $CONF/post_undeploy "$APP" "$ENV" "$GRAFANA_DATA"

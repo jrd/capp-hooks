@@ -3,11 +3,10 @@ APP="$1"
 ENV="$2"
 VER="$3"
 DOCKER_COMPOSE_FILE=$(readlink -f "$4")
-HUB_VOLUME=hub_data
 CONF="$(readlink -f "$(dirname "$0")/../confs/hub")"
-docker run --rm -i \
-  -v $HUB_VOLUME:/hub:rw \
-  -v $DOCKER_COMPOSE_FILE:$DOCKER_COMPOSE_FILE:ro \
-  -v $CONF:/conf:ro \
-  registry.gitlab.com/systra/qeto/docker/python-yaml:3.8 \
-  python /conf/post_deploy undeploy "$APP" "$ENV" "$DOCKER_COMPOSE_FILE" /hub/data/apps.json
+HUB_VOLUME=hub_data
+HUB_DATA=$(docker inspect $HUB_VOLUME 2>/dev/null|jq -r '.[0].Mountpoint')
+if [ "$HUB_DATA" = "null" ]; then
+  exit 0
+fi
+python3 $CONF/post_deploy undeploy "$APP" "$ENV" "$DOCKER_COMPOSE_FILE" "$HUB_DATA/data/apps.json"

@@ -22,11 +22,11 @@ def get_links(compose_file: Path) -> Dict:
         return vhost_str.split(',')[0]
     with open(compose_file) as f:
         dc = full_load(f)
-        return {
-            svc_name: virtual_host
+        return {k: v for k, v in {
+            svc_name: get_virtual_host(svc_def)
             for (svc_name, svc_def) in dc.get('services', {}).items()
-            if svc_name and (virtual_host := get_virtual_host(svc_def))
-        }
+            if svc_name
+        }.items() if v}
 
 
 def write_json(is_deployed: bool, app: str, environment: str, links: Dict, target_file: Path) -> None:
@@ -34,6 +34,7 @@ def write_json(is_deployed: bool, app: str, environment: str, links: Dict, targe
         with open(target_file) as f:
             data = load(f)
     else:
+        target_file.parent.mkdir(parents=True, exist_ok=True)
         data = {}
     for service, link in links.items():
         svc_name = f'{app}-{service}'

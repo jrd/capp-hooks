@@ -15,11 +15,11 @@ from locking import FileLock
 
 
 class Monitoring:
-    def __init__(self, app: str, environment: str) -> None:
+    def __init__(self, app: str, environment: str, grafana_dir: str) -> None:
         self.app = app
         self.environment = environment
-        self.dashboards_path = Path('/grafana/dashboards')
-        templates_path = Path('/conf/templates')
+        self.dashboards_path = Path(grafana_dir) / 'dashboards'
+        templates_path = Path(__file__).parent.resolve() / 'templates'
         self.service_dashboard_path = templates_path / 'service_dashboard.json'
         self.environment_panel_path = templates_path / 'environment_panel.json'
         self.graph_container_states_path = templates_path / 'graph_container_states.json'
@@ -257,9 +257,10 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("app")
     parser.add_argument("environment")
+    parser.add_argument("grafana_dir")
     parser.add_argument("remain", nargs='*')
     args = parser.parse_args()
-    monitoring = Monitoring(args.app, args.environment)
+    monitoring = Monitoring(args.app, args.environment, args.grafana_dir)
     if not monitoring.is_blacklisted() and monitoring.dashboards_path.exists():
         with FileLock(monitoring.dashboards_path / f'{args.app}_services.json.lock', timeout=20):
             monitoring.deploy_service()
