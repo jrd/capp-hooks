@@ -80,9 +80,10 @@ done
 # Init borg repositories (One repo per volume)
 for repo in $arr_repos; do
     echo "Creating repository $repo..."
-    BORG_PASSCOMMAND="cat $BORG_PASSPHRASE_PATH" borg init -e repokey qetoBackup:/backups/$repo
+    BORG_OUTPUT="$(BORG_PASSCOMMAND="cat $BORG_PASSPHRASE_PATH" borg init -e repokey qetoBackup:/backups/$repo 2>&1)"
     return_code=$?
-    if [ $return_code != 0 ]; then
+    if [ -n "$DEBUG" ] && [ $return_code != 0 ]; then
+        echo "$BORG_OUTPUT"
         echo "An error occured while initializing $repo: error code $return_code"
     fi
 done
@@ -105,6 +106,9 @@ location:
 storage:
     encryption_passcommand: "cat $BORG_PASSPHRASE_PATH"
     compression: zstd
+
+hooks:
+    !include /etc/borgmatic.d/common/hooks.yaml
 
 retention:
     keep_within: ${retention_days}d
