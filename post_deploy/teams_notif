@@ -1,0 +1,24 @@
+#!/bin/sh
+APP="$1"
+ENV="$2"
+VER="$3"
+DOCKER_COMPOSE_FILE="$4"
+TARGET_DIR=$(readlink -f "$5")
+CONF="$(readlink -f "$(dirname "$0")/../confs/teams_notif/channels.conf")"
+if grep -q "^$APP:" "$CONF"; then
+    EMAIL=$(grep "^$APP:" "$CONF" | tr -d ' ' | cut -d: -f2-)
+else
+    EMAIL=$(grep "^DEFAULT:" "$CONF" | tr -d ' ' | cut -d: -f2-)
+fi
+(
+    echo "Subject: $APP"
+    echo "From: Qeto Deploy notification <noreply@systra.digital>"
+    echo "To: $EMAIL"
+    echo "MIME-Version: 1.0"
+    echo "Content-Type: text/plain"
+    echo ""
+    echo "$APP has been deployed on $ENV environment"
+    if [ -f "$TARGET_DIR/.metadata" ]; then
+        grep '_version=' "$TARGET_DIR/.metadata" | sed 's/^/  /'
+    fi
+) | /usr/sbin/sendmail -t
