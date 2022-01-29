@@ -1,0 +1,90 @@
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "Prometheus",
+  "fill": 1,
+  "fillGradient": 0,
+  "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 12
+  },
+  "hiddenSeries": false,
+  "id": 136,
+  "legend": {
+    "avg": false,
+    "current": false,
+    "max": false,
+    "min": false,
+    "rightSide": true,
+    "show": true,
+    "total": false,
+    "values": false
+  },
+  "lines": true,
+  "linewidth": 1,
+  "nullPointMode": "connected",
+  "options": {
+    "dataLinks": []
+  },
+  "percentage": false,
+  "pointradius": 2,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "expr": "(max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_status_enum=\"stopping\"}) + max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_status_enum=\"exited\"}) * 2 + max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_status_enum=\"exited-crashed\"}) * 3 + max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_status_enum=\"restarting\"}) * 4 + max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_status_enum=\"created\"}) * 5 + max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_status_enum=\"paused\"}) * 6 + max by (name, container_label_capp_environment) (container_status_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_status_enum=\"running\"}) * 7) != 0",
+      "legendFormat": "{{ name }}",
+      "refId": "A"
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "APP Container states (1: stopping, 2: exited, 3: crashed, 4: restarting, 5: created, 6: paused, 7: running) - Dev environment",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "decimals": 0,
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": "7",
+      "min": "0",
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": false
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  }
+}
+

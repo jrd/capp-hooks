@@ -1,0 +1,44 @@
+#!/bin/sh
+APP="$1"
+ENV="$2"
+# shellcheck disable=SC2034
+VER="$3"
+# shellcheck disable=SC2034
+DOCKER_COMPOSE_FILE="$4"
+TARGET_DIR=$(readlink -f "$5")
+has_config() {
+    f="$1"
+    name="$2"
+    grep -q "^$name:" "$f" 2>/dev/null
+}
+read_config() {
+    f="$1"
+    name="$2"
+    def="$3"
+    value=$(grep "^$name:" "$f" 2>/dev/null | cut -d: -f2- | sed -r 's/^ *//; s/ *$//;' || echo "$def")
+    return "$value"
+}
+SETTINGS="$(readlink -f "$(dirname "$0")/../confs/teams_notif/settings.conf")"
+CHANNELS="$(readlink -f "$(dirname "$0")/../confs/teams_notif/channels.conf")"
+FROM_NAME=$(read_config "$SETTINGS" "FROM_NAME")
+FROM_EMAIL=$(read_config "$SETTINGS" "FROM_EMAIL")
+if has_config "$CHANNELS" "$APP"; then
+    EMAIL=$(read_config "$CHANNELS" "$APP")
+else
+    EMAIL=$(read_config "$CHANNELS" "$DEFAULT")
+fi
+if [ -z "$EMAIL" ]; then
+    exit 0
+fi
+(
+    echo "Subject: $ENV / $APP"
+    echo "From: $FROM_NAME <$FROM_EMAIL>"
+    echo "To: $EMAIL"
+    echo "MIME-Version: 1.0"
+    echo "Content-Type: text/plain"
+    echo ""
+    echo "$APP has been deployed on $ENV environment"
+    if [ -f "$TARGET_DIR/.metadata" ]; then
+        grep '_version=' "$TARGET_DIR/.metadata" | sed 's/^/  /'
+    fi
+) | /usr/sbin/sendmail -t

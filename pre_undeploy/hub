@@ -1,0 +1,13 @@
+#!/bin/sh
+APP="$1"
+ENV="$2"
+# shellcheck disable=SC2034
+VER="$3"
+DOCKER_COMPOSE_FILE=$(readlink -f "$4")
+CONF="$(readlink -f "$(dirname "$0")/../confs/hub")"
+HUB_VOLUME=hub_data
+HUB_DATA=$(docker inspect $HUB_VOLUME 2>/dev/null|jq -r '.[0].Mountpoint')
+if [ "$HUB_DATA" = "null" ]; then
+  exit 0
+fi
+python3 "$CONF/post_deploy" undeploy "$APP" "$ENV" "$DOCKER_COMPOSE_FILE" "$HUB_DATA/data/apps.json"
