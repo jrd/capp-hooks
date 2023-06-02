@@ -56,6 +56,8 @@ class BackupVolumes:
             return {}  # no volume
         volumes = self.compose_config['volumes']
         backups = self.compose_config['x-backups']
+        for volume, config in self.compose_config.get(f'x-{self.env}-backups', {}).items():
+            backups[volume] = config
         # Build repo names & volume paths
         # Only keep backups that define an existing volume and have `retention_days` defined
         return {

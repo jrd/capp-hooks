@@ -35,6 +35,10 @@ x-backups:
         retention_days: 3
 ```
 
+You could also define any `x-ENV-backups` section where ENV could be `dev`, `demo`, `integ`, `staging` or `prod`
+that will override the default `x-backups` section.
+
+Use empty named volume declaration to skip backup that volume.
 
 Monitoring
 ----------
