@@ -45,7 +45,7 @@ def write_json(is_deployed: bool, app: str, environment: str, links: Dict, targe
                 data[svc_name] = {environment: link}
         else:
             if svc_name in data:
-                data[svc_name].pop(environment)
+                data[svc_name].pop(environment, None)
                 if not data[svc_name]:
                     data.pop(svc_name)
     with open(target_file, 'w') as f:
