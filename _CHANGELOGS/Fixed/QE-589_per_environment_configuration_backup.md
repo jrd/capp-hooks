@@ -1,0 +1,1 @@
+- Python 3.7 and old docker compatibility for Backup hooks (QE-589)

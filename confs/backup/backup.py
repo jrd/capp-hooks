@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import stat
 from argparse import ArgumentParser
-from functools import cached_property
-from json import loads
 from os import environ
 from pathlib import Path
 from subprocess import run
@@ -10,9 +8,14 @@ from sys import argv, exit, stderr
 
 from yaml import safe_load
 
+try:
+    from functools import cached_property
+except ImportError:  # python 3.7 compatibility
+    cached_property = property
+
 
 class BackupVolumes:
-    VOLUME_ROOT = Path(loads(run(['docker', 'info', '-f', 'json'], capture_output=True).stdout)['DockerRootDir']) / 'volumes'
+    VOLUME_ROOT = Path(run(['docker', 'info', '-f', '{{.DockerRootDir}}'], capture_output=True, encoding='utf-8').stdout) / 'volumes'
     BORG_PASSPHRASE_PATH = Path('/root/.borg-passphrase')
     BORGMATIC_ROOT = Path('/etc/borgmatic.d')
     BORGMATIC_HOOKS = BORGMATIC_ROOT / 'common' / 'hooks.yaml'

@@ -1,0 +1,23 @@
+include:
+  - local: /.gitlab/security-ci.yml
+  - local: /.gitlab/secret-ci.yml
+  - local: /.gitlab/tag-ci.yml
+stages:
+  - test
+  - release
+  - publish
+security:
+  extends: .security
+secret:
+  extends: .secret
+.tag_base:
+  extends: .tag
+  needs:
+    - security
+    - secret
+tag:major:
+  extends: .tag_base
+tag:minor:
+  extends: .tag_base
+tag:patch:
+  extends: .tag_base
