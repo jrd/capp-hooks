@@ -15,7 +15,13 @@ except ImportError:  # python 3.7 compatibility
 
 
 class BackupVolumes:
-    VOLUME_ROOT = Path(run(['docker', 'info', '-f', '{{.DockerRootDir}}'], capture_output=True, encoding='utf-8').stdout) / 'volumes'
+    VOLUME_ROOT = Path(
+      run(
+        ['docker', 'info', '-f', '{{.DockerRootDir}}'],
+        capture_output=True,
+        encoding='utf-8',
+      ).stdout.strip(),
+    ) / 'volumes'
     BORG_PASSPHRASE_PATH = Path('/root/.borg-passphrase')
     BORGMATIC_ROOT = Path('/etc/borgmatic.d')
     BORGMATIC_HOOKS = BORGMATIC_ROOT / 'common' / 'hooks.yaml'
