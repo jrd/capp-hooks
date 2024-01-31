@@ -6,7 +6,7 @@
   "gridPos": {
     "h": 4,
     "w": 12,
-    "x": 0,
+    "x": 12,
     "y": 0
   },
   "hideTimeOverride": true,
@@ -20,7 +20,7 @@
       "interval": "",
       "intervalFactor": 10,
       "legendFormat": "{{ name }}",
-      "metric": "container_memory_usage_bytes",
+      "metric": "container_cpu_load_average_10s",
       "refId": "A",
       "step": 10,
       "datasource": {
@@ -30,7 +30,7 @@
     }
   ],
   "timeFrom": "10s",
-  "title": "APP Memory Usage - Dev environment",
+  "title": "APP CPU Usage - Dev environment",
   "type": "stat",
   "fieldConfig": {
     "defaults": {
@@ -54,12 +54,14 @@
           }
         ]
       },
-      "unit": "bytes",
+      "unit": "none",
       "decimals": 2,
       "color": {
         "mode": "continuous-BlYlRd"
       },
-      "fieldMinMax": false
+      "fieldMinMax": false,
+      "decimals": 1,
+      "displayName": "Load"
     },
     "overrides": []
   },
@@ -67,19 +69,18 @@
     "reduceOptions": {
       "values": false,
       "calcs": [
-        "mean"
+        "last"
       ],
       "fields": ""
     },
     "orientation": "horizontal",
-    "textMode": "value",
+    "textMode": "value_and_name",
     "wideLayout": true,
     "colorMode": "value",
     "graphMode": "none",
-    "justifyMode": "auto"
+    "justifyMode": "center"
   },
   "transparent": true,
-  "cacheTimeout": null,
   "interval": null,
   "timeShift": null
 }

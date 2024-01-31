@@ -8,5 +8,5 @@ indent_style = space
 indent_size = 2
 line_length = 160
 
-[*.py]
+[*.{py,toml}]
 indent_size = 4

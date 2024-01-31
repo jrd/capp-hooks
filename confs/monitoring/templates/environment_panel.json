@@ -1,13 +1,16 @@
 {
   "collapsed": true,
-  "datasource": null,
+  "datasource": {
+    "type": "prometheus",
+    "uid": "000000001"
+  },
   "gridPos": { 
     "h": 1,
     "w": 24,
     "x": 0,
-    "y": 4
+    "y": 0
   },
-  "id": 115,
+  "id": 0,
   "panels": [],
   "title": "APP services for Dev environment",
   "type": "row"

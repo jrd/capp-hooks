@@ -1,90 +1,119 @@
 {
-  "aliasColors": {},
-  "bars": false,
-  "dashLength": 10,
-  "dashes": false,
-  "datasource": "Prometheus",
-  "fill": 1,
-  "fillGradient": 0,
+  "datasource": {
+    "type": "prometheus",
+    "uid": "000000001"
+  },
   "gridPos": {
     "h": 7,
     "w": 24,
     "x": 0,
     "y": 0
   },
-  "hiddenSeries": false,
   "id": 0,
-  "legend": {
-    "avg": false,
-    "current": false,
-    "max": false,
-    "min": false,
-    "rightSide": true,
-    "show": true,
-    "total": false,
-    "values": false
-  },
-  "lines": true,
-  "linewidth": 1,
-  "nullPointMode": "null as zero",
   "options": {
-    "dataLinks": []
+    "tooltip": {
+      "mode": "multi",
+      "sort": "none"
+    },
+    "legend": {
+      "showLegend": true,
+      "displayMode": "list",
+      "placement": "bottom",
+      "calcs": []
+    },
+    "timezone": [
+      "browser"
+    ]
   },
-  "percentage": false,
-  "pointradius": 2,
-  "points": true,
-  "renderer": "flot",
-  "seriesOverrides": [],
-  "spaceLength": 10,
-  "stack": false,
-  "steppedLine": false,
   "targets": [
     {
-      "expr": "(max by (name, container_label_capp_environment) (container_health_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_health_enum=\"unhealthy\"}) + max by (name, container_label_capp_environment) (container_health_enum{container_label_capp_app=\"APP\", container_label_capp_environment=\"dev\", container_health_enum=\"healthy\"}) * 2)  != 0",
+      "expr": "replaced by script",
       "legendFormat": "{{ name }}",
-      "refId": "A"
+      "refId": "A",
+      "datasource": {
+        "uid": "000000001",
+        "type": "prometheus"
+      }
     }
   ],
-  "thresholds": [],
-  "timeFrom": null,
-  "timeRegions": [],
-  "timeShift": null,
-  "title": "APP Container health (1: unhealthy, 2: healthy) - Dev environment",
-  "tooltip": {
-    "shared": true,
-    "sort": 0,
-    "value_type": "individual"
-  },
-  "type": "graph",
-  "xaxis": {
-    "buckets": null,
-    "mode": "time",
-    "name": null,
-    "show": true,
-    "values": []
-  },
-  "yaxes": [
-    {
+  "title": "APP Container health - Dev environment",
+  "type": "timeseries",
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "drawStyle": "line",
+        "lineInterpolation": "linear",
+        "barAlignment": 0,
+        "lineWidth": 1,
+        "fillOpacity": 10,
+        "gradientMode": "opacity",
+        "spanNulls": true,
+        "insertNulls": 3600000,
+        "showPoints": "never",
+        "pointSize": 5,
+        "stacking": {
+          "mode": "none",
+          "group": "A"
+        },
+        "axisPlacement": "auto",
+        "axisColorMode": "text",
+        "axisBorderShow": false,
+        "scaleDistribution": {
+          "type": "linear"
+        },
+        "axisCenteredZero": false,
+        "hideFrom": {
+          "tooltip": false,
+          "viz": false,
+          "legend": false
+        },
+        "thresholdsStyle": {
+          "mode": "off"
+        },
+        "lineStyle": {
+          "fill": "solid"
+        }
+      },
+      "color": {
+        "mode": "palette-classic"
+      },
+      "mappings": [
+        {
+          "type": "value",
+          "options": {
+            "0": {
+              "text": "down",
+              "index": 0
+            },
+            "1": {
+              "text": "unhealthy",
+              "index": 1
+            },
+            "2": {
+              "text": "healthy",
+              "index": 2
+            }
+          }
+        }
+      ],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          }
+        ]
+      },
+      "links": [],
+      "unit": "none",
       "decimals": 0,
-      "format": "short",
-      "label": null,
-      "logBase": 1,
-      "max": "2",
-      "min": "0",
-      "show": true
+      "min": 0,
+      "max": 2
     },
-    {
-      "format": "short",
-      "label": null,
-      "logBase": 1,
-      "max": null,
-      "min": null,
-      "show": false
-    }
-  ],
-  "yaxis": {
-    "align": false,
-    "alignLevel": null
-  }
+    "overrides": []
+  },
+  "timeFrom": null,
+  "timeShift": null,
+  "description": ""
 }
-

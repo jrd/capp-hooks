@@ -1,107 +1,118 @@
 {
-  "aliasColors": {},
-  "bars": false,
-  "dashLength": 10,
-  "dashes": false,
-  "datasource": "Prometheus",
-  "decimals": 2,
-  "editable": true,
-  "error": false,
-  "fill": 1,
-  "fillGradient": 0,
-  "grid": {},
+  "datasource": {
+    "uid": "000000001",
+    "type": "prometheus"
+  },
   "gridPos": {
     "h": 7,
     "w": 24,
     "x": 0,
-    "y": 27
+    "y": 0
   },
-  "hiddenSeries": false,
-  "id": 118,
-  "legend": {
-    "alignAsTable": true,
-    "avg": true,
-    "current": false,
-    "max": true,
-    "min": true,
-    "rightSide": true,
-    "show": true,
-    "total": false,
-    "values": true
-  },
-  "lines": true,
-  "linewidth": 2,
+  "id": 0,
   "links": [],
-  "nullPointMode": "connected",
   "options": {
-    "dataLinks": []
+    "tooltip": {
+      "mode": "multi",
+      "sort": "desc"
+    },
+    "legend": {
+      "showLegend": true,
+      "displayMode": "table",
+      "placement": "bottom",
+      "calcs": [
+        "mean",
+        "max",
+        "min"
+      ]
+    },
+    "timezone": [
+      "browser"
+    ]
   },
-  "percentage": false,
-  "pointradius": 5,
-  "points": false,
-  "renderer": "flot",
-  "seriesOverrides": [],
-  "spaceLength": 10,
-  "stack": false,
-  "steppedLine": false,
   "targets": [
     {
-      "expr": "sum by (name) (rate(container_cpu_user_seconds_total{container_label_capp_app=\"APP\",container_label_capp_environment=\"dev\"}[1m]) * 100  / scalar(count(node_cpu{mode=\"user\"})))",
+      "expr": "replaced by script",
       "format": "time_series",
       "hide": true,
       "intervalFactor": 10,
       "legendFormat": "{{ name }}",
       "refId": "A",
-      "step": 10
+      "step": 10,
+      "datasource": {
+        "uid": "000000001",
+        "type": "prometheus"
+      }
     },
     {
-      "expr": "sum by (name) (rate(container_cpu_user_seconds_total{container_label_capp_app=\"APP\",container_label_capp_environment=\"dev\"}[1m]) * 100  / scalar(count(node_cpu_seconds_total{mode=\"user\"})))",
+      "expr": "replaced by script",
       "format": "time_series",
       "intervalFactor": 10,
       "legendFormat": "{{ name }}",
-      "refId": "B"
+      "refId": "B",
+      "datasource": {
+        "uid": "000000001",
+        "type": "prometheus"
+      }
     }
   ],
-  "thresholds": [],
-  "timeFrom": null,
-  "timeRegions": [],
-  "timeShift": null,
   "title": "APP Container CPU Usage - Dev environment",
-  "tooltip": {
-    "msResolution": true,
-    "shared": true,
-    "sort": 2,
-    "value_type": "cumulative"
-  },
-  "type": "graph",
-  "xaxis": {
-    "buckets": null,
-    "mode": "time",
-    "name": null,
-    "show": true,
-    "values": []
-  },
-  "yaxes": [
-    {
-      "format": "percent",
-      "label": null,
-      "logBase": 1,
-      "max": null,
-      "min": null,
-      "show": true
+  "type": "timeseries",
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "drawStyle": "line",
+        "lineInterpolation": "linear",
+        "barAlignment": 0,
+        "lineWidth": 2,
+        "fillOpacity": 10,
+        "gradientMode": "none",
+        "spanNulls": true,
+        "insertNulls": false,
+        "showPoints": "never",
+        "pointSize": 5,
+        "stacking": {
+          "mode": "none",
+          "group": "A"
+        },
+        "axisPlacement": "auto",
+        "axisLabel": "",
+        "axisColorMode": "text",
+        "axisBorderShow": false,
+        "scaleDistribution": {
+          "type": "linear"
+        },
+        "axisCenteredZero": false,
+        "hideFrom": {
+          "tooltip": false,
+          "viz": false,
+          "legend": false
+        },
+        "thresholdsStyle": {
+          "mode": "off"
+        },
+        "lineStyle": {
+          "fill": "solid"
+        }
+      },
+      "color": {
+        "mode": "palette-classic"
+      },
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          }
+        ]
+      },
+      "links": [],
+      "unit": "percent"
     },
-    {
-      "format": "short",
-      "label": null,
-      "logBase": 1,
-      "max": null,
-      "min": null,
-      "show": true
-    }
-  ],
-  "yaxis": {
-    "align": false,
-    "alignLevel": null
-  }
+    "overrides": []
+  },
+  "timeFrom": null,
+  "timeShift": null
 }
-
