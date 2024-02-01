@@ -11,6 +11,7 @@ from typing import (
     List,
 )
 from uuid import uuid4
+
 from locking import FileLock
 
 
@@ -25,9 +26,9 @@ class Monitoring:
         self.graph_container_health_path = templates_path / 'graph_container_health.json'
         self.graph_container_states_path = templates_path / 'graph_container_states.json'
         self.graph_environment_memory_usage_path = templates_path / 'graph_environment_memory_usage.json'
+        self.graph_environment_cpu_usage_path = templates_path / 'graph_environment_cpu_usage.json'
         self.graph_container_memory_usage_path = templates_path / 'graph_container_memory_usage.json'
         self.graph_container_cpu_usage_path = templates_path / 'graph_container_cpu_usage.json'
-        self.graph_alerts_path = templates_path / 'graph_alerts.json'
         self.capp_app_label = 'capp_app'
         self.capp_environment_label = 'capp_environment'
         self.all_env = 'all'
@@ -89,13 +90,14 @@ class Monitoring:
         environment_panel['id'] = (env_index + 1) * 1000
         environment_panel['gridPos']['y'] = env_index
         environment_panel['title'] = f'{self.app.capitalize()} services for {self.get_env_name(env)}'
-        container_health = self.get_container_health_graph(env, 0)
-        container_states = self.get_container_states_graph(env, 1)
-        environment_memory = self.get_environment_memory_usage_graph(env, 2, 0)
-        container_memory = self.get_container_memory_usage_graph(env, 2, 4)
-        container_cpu = self.get_container_cpu_usage_graph(env, 3)
-        alerts = self.get_alerts_graph(env, 4)
-        environment_panel['panels'] = [container_health, container_states, environment_memory, container_memory, container_cpu, alerts]
+        environment_panel['panels'] = [
+            self.get_container_health_graph(env, 0),
+            self.get_container_states_graph(env, 1),
+            self.get_environment_memory_usage_graph(env, 2),
+            self.get_environment_cpu_usage_graph(env, 2),
+            self.get_container_memory_usage_graph(env, 3),
+            self.get_container_cpu_usage_graph(env, 4),
+        ]
         return environment_panel
 
     def _set_graph_id_position_title(self, env: str, graph: Dict, graph_name: str, panel_y_pos: int = None, panel_x_pos: int = None) -> Dict:
@@ -117,36 +119,60 @@ class Monitoring:
                 cleaned_panels.append(panel)
         return cleaned_panels
 
-    def get_container_health_graph(self, env: str, panel_y_pos: int = 0) -> Dict:
+    def get_container_health_graph(self, env: str, panel_y_pos: int = 0, panel_x_pos: int = 0) -> Dict:
         with self.graph_container_health_path.open() as f:
             graph = load(f)
-        graph_name = 'Container health (1: unhealthy, 2: healthy)'
-        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        graph_name = 'Container health'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
-        expression_unhealthy = f'max by (name, container_label_{self.capp_environment_label}) (container_health_enum{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}, container_health_enum=\"unhealthy\"}})'
-        expression_healthy = f'max by (name, container_label_{self.capp_environment_label}) (container_health_enum{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}, container_health_enum=\"healthy\"}}) * 2'
-        expression = f'({expression_unhealthy}+ {expression_healthy}) != 0'
+        expression_unhealthy = (
+            f'max by (name, container_label_{self.capp_environment_label})' +
+            ' (container_health_enum{' +
+            ', '.join((
+                f'name=~\"^{self.app}-.*\"',
+                f'container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}',
+                'container_health_enum=\"unhealthy\"'
+            )) +
+            '})'
+        )
+        expression_healthy = (
+            f'max by (name, container_label_{self.capp_environment_label})' +
+            ' (container_health_enum{' + ', '.join((
+                f'name=~\"^{self.app}-.*\"',
+                f'container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}',
+                'container_health_enum=\"healthy\"',
+            )) +
+            '})'
+        )
+        expression = f'({expression_unhealthy} + {expression_healthy} * 2) != 0'
         graph['targets'] = [
             {
                 'expr': expression,
                 'legendFormat': '{{ name }}',
-                'refId': 'A'
+                'refId': 'A',
+                'editorMode': 'code',
+                'range': True,
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
             }
         ]
         return graph
 
-    def get_container_states_graph(self, env: str, panel_y_pos: int = 1) -> Dict:
+    def get_container_states_graph(self, env: str, panel_y_pos: int = 1, panel_x_pos: int = 0) -> Dict:
         with self.graph_container_states_path.open() as f:
             graph = load(f)
-        graph_name = 'Container states (1: stopping, 2: exited, 3: crashed, 4: restarting, 5: created, 6: paused, 7: running)'
-        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        graph_name = 'Container states'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
 
         def get_state_expression(state):
-            return (
-                f'max by (name, container_label_{self.capp_environment_label})'
-                f' (container_status_enum{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}, container_status_enum=\"{state}\"}})'
-            )
+            return f'max by (name, container_label_{self.capp_environment_label}) (container_status_enum{{' + ', '.join((
+                f'name=~\"^{self.app}-.*\"',
+                f'container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}',
+                f'container_status_enum=\"{state}\"',
+            )) + '})'
         state_1 = get_state_expression('stopping')
         state_2 = get_state_expression('exited')
         state_3 = get_state_expression('exited-crashed')
@@ -159,7 +185,13 @@ class Monitoring:
             {
                 'expr': expression,
                 'legendFormat': '{{ name }}',
-                'refId': 'A'
+                'refId': 'A',
+                'editorMode': 'code',
+                'range': True,
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
             }
         ]
         return graph
@@ -168,9 +200,12 @@ class Monitoring:
         with self.graph_environment_memory_usage_path.open() as f:
             graph = load(f)
         graph_name = 'Memory Usage'
-        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
-        expression = f'sum(container_memory_usage_bytes{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}})'
+        expression = (
+            f'sum(container_memory_usage_bytes{{name=~\"^{self.app}-.*\",' +
+            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}})'
+        )
         graph['targets'] = [
             {
                 'expr': expression,
@@ -180,18 +215,53 @@ class Monitoring:
                 'legendFormat': '{{ name }}',
                 'metric': 'container_memory_usage_bytes',
                 'refId': 'A',
-                'step': 10
+                'step': 10,
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
             }
         ]
         return graph
 
-    def get_container_memory_usage_graph(self, env: str, panel_y_pos: int = 2, panel_x_pos: int = 0) -> Dict:
+    def get_environment_cpu_usage_graph(self, env: str, panel_y_pos: int = 2, panel_x_pos: int = 12) -> Dict:
+        with self.graph_environment_cpu_usage_path.open() as f:
+            graph = load(f)
+        graph_name = 'CPU Usage'
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
+        expression_environment_specific = self.get_specific_query_expression(env)
+        expression = (
+            f'container_cpu_load_average_10s{{name=~\"^{self.app}-.*\",' +
+            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}'
+        )
+        graph['targets'] = [
+            {
+                'expr': expression,
+                'format': 'time_series',
+                'interval': '',
+                'intervalFactor': 10,
+                'legendFormat': '{{ name }}',
+                'metric': 'container_cpu_load_average_10s',
+                'refId': 'A',
+                'step': 10,
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
+            }
+        ]
+        return graph
+
+    def get_container_memory_usage_graph(self, env: str, panel_y_pos: int = 3, panel_x_pos: int = 0) -> Dict:
         with self.graph_container_memory_usage_path.open() as f:
             graph = load(f)
         graph_name = 'Container Memory Usage'
-        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
-        expression = f'sum by (name) (container_memory_usage_bytes{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}})'
+        expression = (
+            f'sum by (name) (container_memory_usage_bytes{{name=~\"^{self.app}-.*\",' +
+            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}})'
+        )
         graph['targets'] = [
             {
                 'expr': expression,
@@ -200,19 +270,33 @@ class Monitoring:
                 'intervalFactor': 1,
                 'legendFormat': '{{ name }}',
                 'refId': 'A',
-                'step': 10
+                'step': 10,
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
             }
         ]
         return graph
 
-    def get_container_cpu_usage_graph(self, env: str, panel_y_pos: int = 3) -> Dict:
+    def get_container_cpu_usage_graph(self, env: str, panel_y_pos: int = 4, panel_x_pos: int = 0) -> Dict:
         with self.graph_container_cpu_usage_path.open() as f:
             graph = load(f)
         graph_name = 'Container CPU Usage'
-        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
+        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
-        expression_1 = f'sum by (name) (rate(container_cpu_user_seconds_total{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]) * 100 / scalar(count(node_cpu{{mode=\"user\"}})))'
-        expression_2 = f'sum by (name) (rate(container_cpu_user_seconds_total{{container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]) * 100 / scalar(count(node_cpu_seconds_total{{mode=\"user\"}})))'
+        expression_1 = (
+            'sum by (name) (rate('
+            f'container_cpu_user_seconds_total{{name=~\"^{self.app}-.*\",'
+            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]'
+            ') * 100 / scalar(count(node_cpu{mode=\"user\"})))'
+        )
+        expression_2 = (
+            'sum by (name) (rate('
+            f'container_cpu_user_seconds_total{{name=~\"^{self.app}-.*\",'
+            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]'
+            ') * 100 / scalar(count(node_cpu_seconds_total{mode=\"user\"})))'
+        )
         graph['targets'] = [
             {
                 'expr': expression_1,
@@ -221,33 +305,22 @@ class Monitoring:
                 'intervalFactor': 10,
                 'legendFormat': '{{ name }}',
                 'refId': 'A',
-                'step': 10
+                'step': 10,
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
             },
             {
                 'expr': expression_2,
                 'format': 'time_series',
                 'intervalFactor': 10,
                 'legendFormat': '{{ name }}',
-                'refId': 'B'
-            }
-        ]
-        return graph
-
-    def get_alerts_graph(self, env: str, panel_y_pos: int = 4) -> Dict:
-        with self.graph_alerts_path.open() as f:
-            graph = load(f)
-        graph_name = 'Alerts'
-        graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos)
-        graph['targets'] = [
-            {
-                "expr": "sum(ALERTS{alertstate=\"firing\"}) by (alertname)",
-                "format": "time_series",
-                "interval": "30s",
-                "intervalFactor": 1,
-                "legendFormat": "{{ alertname }}",
-                "metric": "container_memory_usage_bytes",
-                "refId": "A",
-                "step": 10
+                'refId': 'B',
+                'datasource': {
+                    'uid': '000000001',
+                    'type': 'prometheus',
+                },
             }
         ]
         return graph

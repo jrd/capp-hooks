@@ -1,100 +1,104 @@
 {
-  "aliasColors": {},
-  "bars": false,
-  "dashLength": 10,
-  "dashes": false,
-  "datasource": "Prometheus",
-  "decimals": 2,
-  "editable": true,
-  "error": false,
-  "fill": 1,
-  "fillGradient": 0,
-  "grid": {},
+  "datasource": {
+    "uid": "000000001",
+    "type": "prometheus"
+  },
   "gridPos": {
-    "h": 7,
-    "w": 20,
-    "x": 4,
-    "y": 20
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 0
   },
-  "hiddenSeries": false,
-  "id": 117,
-  "legend": {
-    "alignAsTable": true,
-    "avg": true, 
-    "current": false,
-    "max": true,
-    "min": true,
-    "rightSide": true,
-    "show": true,
-    "total": false,
-    "values": true
-  },
-  "lines": true,
-  "linewidth": 2,
+  "id": 0,
   "links": [],
-  "nullPointMode": "connected",
   "options": {
-    "dataLinks": []
-  },  
-  "percentage": false,
-  "pointradius": 5,
-  "points": false,
-  "renderer": "flot",
-  "seriesOverrides": [],
-  "spaceLength": 10,
-  "stack": false,
-  "steppedLine": false,
+    "tooltip": {
+      "mode": "multi",
+      "sort": "desc"
+    },
+    "legend": {
+      "showLegend": true,
+      "displayMode": "table",
+      "placement": "bottom",
+      "calcs": [
+        "mean",
+        "max",
+        "min"
+      ]
+    },
+    "timezone": [
+      "browser"
+    ]
+  },
   "targets": [
     {
-      "expr": "sum by (name) (container_memory_usage_bytes{container_label_capp_app=\"APP\",container_label_capp_environment=\"dev\"})",
+      "expr": "replaced by script",
       "format": "time_series",
-      "interval": "",
-      "intervalFactor": 10,
+      "interval": "10s",
+      "intervalFactor": 1,
       "legendFormat": "{{ name }}",
-      "metric": "container_memory_usage_bytes",
       "refId": "A",
-      "step": 10
+      "step": 10,
+      "datasource": {
+        "uid": "000000001",
+        "type": "prometheus"
+      }
     }
   ],
-  "thresholds": [],
-  "timeFrom": null,
-  "timeRegions": [],
-  "timeShift": null,
   "title": "APP Container Memory Usage - Dev environment",
-  "tooltip": {
-    "msResolution": true,
-    "shared": true,
-    "sort": 2,
-    "value_type": "cumulative"
-  },
-  "type": "graph",
-  "xaxis": {
-    "buckets": null,
-    "mode": "time",
-    "name": null,
-    "show": true,
-    "values": []
-  },
-  "yaxes": [
-    {
-      "format": "bytes",
-      "label": null,
-      "logBase": 1,
-      "max": null,
-      "min": null,
-      "show": true
+  "type": "timeseries",
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "drawStyle": "line",
+        "lineInterpolation": "linear",
+        "barAlignment": 0,
+        "lineWidth": 2,
+        "fillOpacity": 10,
+        "gradientMode": "none",
+        "spanNulls": true,
+        "insertNulls": false,
+        "showPoints": "never",
+        "pointSize": 5,
+        "stacking": {
+          "mode": "none",
+          "group": "A"
+        },
+        "axisPlacement": "auto",
+        "axisLabel": "",
+        "axisColorMode": "text",
+        "axisBorderShow": false,
+        "scaleDistribution": {
+          "type": "linear"
+        },
+        "axisCenteredZero": false,
+        "hideFrom": {
+          "tooltip": false,
+          "viz": false,
+          "legend": false
+        },
+        "thresholdsStyle": {
+          "mode": "off"
+        }
+      },
+      "color": {
+        "mode": "palette-classic"
+      },
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          }
+        ]
+      },
+      "links": [],
+      "unit": "bytes"
     },
-    {
-      "format": "short",
-      "label": null,
-      "logBase": 1,
-      "max": null,
-      "min": null,
-      "show": false
-    }
-  ],
-  "yaxis": {
-    "align": false,
-    "alignLevel": null
-  }
+    "overrides": []
+  },
+  "timeFrom": null,
+  "timeShift": null
 }
