@@ -1,1 +1,0 @@
-- Fix incorrect newline that slipped into borgmatic backup files
