@@ -150,8 +150,6 @@ class Monitoring:
                 'expr': expression,
                 'legendFormat': '{{ name }}',
                 'refId': 'A',
-                'editorMode': 'code',
-                'range': True,
                 'datasource': {
                     'uid': '000000001',
                     'type': 'prometheus',
@@ -213,7 +211,6 @@ class Monitoring:
                 'interval': '',
                 'intervalFactor': 10,
                 'legendFormat': '{{ name }}',
-                'metric': 'container_memory_usage_bytes',
                 'refId': 'A',
                 'step': 10,
                 'datasource': {
@@ -231,8 +228,9 @@ class Monitoring:
         graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
         expression = (
-            f'container_cpu_load_average_10s{{name=~\"^{self.app}-.*\",' +
-            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}'
+            f'sum(rate(container_cpu_user_seconds_total{{name=~\"^{self.app}-.*\",' +
+            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]' +
+            ') * 100 / scalar(count(node_cpu_seconds_total{mode=\"user\"})))'
         )
         graph['targets'] = [
             {
@@ -241,7 +239,6 @@ class Monitoring:
                 'interval': '',
                 'intervalFactor': 10,
                 'legendFormat': '{{ name }}',
-                'metric': 'container_cpu_load_average_10s',
                 'refId': 'A',
                 'step': 10,
                 'datasource': {
@@ -285,13 +282,7 @@ class Monitoring:
         graph_name = 'Container CPU Usage'
         graph = self._set_graph_id_position_title(env, graph, graph_name, panel_y_pos, panel_x_pos)
         expression_environment_specific = self.get_specific_query_expression(env)
-        expression_1 = (
-            'sum by (name) (rate('
-            f'container_cpu_user_seconds_total{{name=~\"^{self.app}-.*\",'
-            f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]'
-            ') * 100 / scalar(count(node_cpu{mode=\"user\"})))'
-        )
-        expression_2 = (
+        expression = (
             'sum by (name) (rate('
             f'container_cpu_user_seconds_total{{name=~\"^{self.app}-.*\",'
             f' container_label_{self.capp_app_label}=\"{self.app}\"{expression_environment_specific}}}[1m]'
@@ -299,24 +290,11 @@ class Monitoring:
         )
         graph['targets'] = [
             {
-                'expr': expression_1,
+                'expr': expression,
                 'format': 'time_series',
-                'hide': True,
                 'intervalFactor': 10,
                 'legendFormat': '{{ name }}',
                 'refId': 'A',
-                'step': 10,
-                'datasource': {
-                    'uid': '000000001',
-                    'type': 'prometheus',
-                },
-            },
-            {
-                'expr': expression_2,
-                'format': 'time_series',
-                'intervalFactor': 10,
-                'legendFormat': '{{ name }}',
-                'refId': 'B',
                 'datasource': {
                     'uid': '000000001',
                     'type': 'prometheus',

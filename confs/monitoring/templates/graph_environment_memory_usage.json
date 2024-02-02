@@ -20,7 +20,6 @@
       "interval": "",
       "intervalFactor": 10,
       "legendFormat": "{{ name }}",
-      "metric": "container_memory_usage_bytes",
       "refId": "A",
       "step": 10,
       "datasource": {

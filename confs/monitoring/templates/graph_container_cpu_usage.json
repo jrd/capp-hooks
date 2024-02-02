@@ -34,22 +34,9 @@
     {
       "expr": "replaced by script",
       "format": "time_series",
-      "hide": true,
       "intervalFactor": 10,
       "legendFormat": "{{ name }}",
       "refId": "A",
-      "step": 10,
-      "datasource": {
-        "uid": "000000001",
-        "type": "prometheus"
-      }
-    },
-    {
-      "expr": "replaced by script",
-      "format": "time_series",
-      "intervalFactor": 10,
-      "legendFormat": "{{ name }}",
-      "refId": "B",
       "datasource": {
         "uid": "000000001",
         "type": "prometheus"

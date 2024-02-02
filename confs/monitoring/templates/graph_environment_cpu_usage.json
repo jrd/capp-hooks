@@ -20,7 +20,6 @@
       "interval": "",
       "intervalFactor": 10,
       "legendFormat": "{{ name }}",
-      "metric": "container_cpu_load_average_10s",
       "refId": "A",
       "step": 10,
       "datasource": {
@@ -54,13 +53,12 @@
           }
         ]
       },
-      "unit": "none",
-      "decimals": 2,
+      "unit": "percent",
+      "decimals": 3,
       "color": {
         "mode": "continuous-BlYlRd"
       },
       "fieldMinMax": false,
-      "decimals": 1,
       "displayName": "Load"
     },
     "overrides": []
